@@ -1,6 +1,9 @@
 const Tenant = require('../models/Tenant');
 const User = require('../models/User');
 const crypto = require('./../utility/crypto');
+const utility = require('../utility/utility');
+const designationController = require('../controllers/DesignationController');
+const mongoose = require('mongoose');
 
 function fetchAllTenant(req, res, next) {
   Tenant.find()
@@ -17,35 +20,48 @@ function fetchAllTenant(req, res, next) {
 
 function storeTenant(req, res, next) {
   const requestBody = req.body;
-  let newUser = new User();
-  newUser.email = requestBody.primaryEmail;
-  newUser.name = requestBody.primaryFirstName;
-  newUser.password = crypto.aesEncrypt('Test1234@');;
-  newUser.save();
+  designationController.getIdForRole('Human Resource Manager', (data) => {
+    utility.getEmpId((empdata) => {
+      let newUser = new User();
+      newUser._id = new mongoose.Types.ObjectId;
+      newUser.email = requestBody.primaryEmail;
+      newUser.password = crypto.aesEncrypt('Test1234@');
+      newUser.role = data._id;
+      newUser.employeeId = empdata;
+      const userinfo = {
+        firstName: requestBody.primaryFirstName,
+        lastName: requestBody.primaryLastName,
+      }
+      newUser.userinfo = userinfo;
+      newUser.createdBy = new mongoose.Types.ObjectId;
 
-  let newTenant = new Tenant();
-  newTenant.name = requestBody.tenantName;
-  newTenant.email = requestBody.tenantEmail;
-  newTenant.addressOne = requestBody.addressOne;
-  newTenant.addressTwo = requestBody.addressTwo;
-  newTenant.city = requestBody.city;
-  newTenant.state = requestBody.state;
-  newTenant.zipcode = requestBody.zipCode;
-  newTenant.country = requestBody.country;
-  newTenant.phonenumber = requestBody.tenantPhone;
-  newTenant.tenantUserId = newUser.objectId;
-  newTenant.save()
-  .then((tenant) => {
-    res.send({
-      confirmation: 'success',
-      data: 'Tenant created successfully'
+      let newTenant = new Tenant();
+      newTenant._id = new mongoose.Types.ObjectId;
+      newTenant.name = requestBody.tenantName;
+      newTenant.email = requestBody.tenantEmail;
+      newTenant.tenantUserId = newUser._id;
+      newTenant.createdBy = newUser._id;
+      const location = {
+        addressOne: requestBody.addressOne,
+        addressTwo: requestBody.addressTwo,
+        city: requestBody.city,
+        state: requestBody.state,
+        zipcode: requestBody.zipCode,
+        country: requestBody.country,
+        phonenumber: requestBody.tenantPhone,
+        createdBy: newUser._id
+      }
+      newTenant.location = location;
+      newUser.tenantId = newTenant._id;
+      newUser.save();
+      newTenant.save()
+      .then((tenant) => {
+        res.status(200).send({
+          confirmation: tenant,
+          data: 'Tenant created successfully'
+        });
+      });
     });
-  })
-  .error((error) => {
-    res.send({
-      confirmation: 'error',
-      data: 'Cannot able to create tenant'
-    })
   });
 }
 

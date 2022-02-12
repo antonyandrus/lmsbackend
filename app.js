@@ -1,23 +1,21 @@
-var createError = require("http-errors");
-var express = require("express");
-var path = require("path");
-var cookieParser = require("cookie-parser");
-var logger = require("morgan");
-var mongoose = require("mongoose");
-const dotenv = require('dotenv');
-var mongoDb = "mongodb://localhost/learningsystem";
+const mongoose = require("mongoose");
+const express = require("express");
+const cookieParser = require("cookie-parser");
+const logger = require("morgan");
+const app = express();
+const createError = require("http-errors");
+const dotenv = require('dotenv').config();
+const path = require("path");
 
-var usersRouter = require("./routes/users");
-var tenantRouter = require('./routes/tenant');
+// Routers
+const usersRouter = require("./routes/users");
+const tenantRouter = require('./routes/tenant');
 
-var app = express();
-
-dotenv.config({ path: './.env' });
 /**
  * Mongoose connection
  */
-mongoose.connect(mongoDb, { useNewUrlParser: true, useUnifiedTopology: true });
-var dbConnectionCheck = mongoose.connection;
+mongoose.connect(process.env.MONGO_URL, { useNewUrlParser: true, useUnifiedTopology: true });
+const dbConnectionCheck = mongoose.connection;
 dbConnectionCheck.on(
   "error",
   console.error.bind(console, "Mongodb Connection Error")
